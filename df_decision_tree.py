@@ -149,6 +149,20 @@ class DecisionTree():
                 else:
                     info_gain = 1.0
             return info_gain
+        if self.treeType == "CART":
+            count_df = data.groupBy(self.labelCol).count()
+            ratio_df = count_df.withColumn("ratio", count_df["count"]/total_num)
+            gini_D = ratio_df.withColumn("info", -ratio_df["ratio"]**2)\
+                            .agg({"info": "sum"}).collect()[0][0]
+            df1 = data.groupBy(featureName, self.labelCol).count()
+            df2 = df1.groupBy(featureName).sum('count')
+            joined_df = df1.join(df2, featureName)
+            tmp_df = joined_df.withColumn("p", joined_df["count"]/joined_df["sum(count)"])\
+                            .withColumn("ratio", joined_df["sum(count)"]/total_num)
+            gini = tmp_df.withColumn("info", -tmp_df["ratio"]*tmp_df["p"]**2)\
+                        .agg({"info": "sum"}).collect()[0][0]
+            info_gain = gini_D - gini
+            return info_gain
     
     def predict(self, data_row):
         cur = self.root
