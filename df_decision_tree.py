@@ -1,7 +1,8 @@
 from typing import Optional
 from enum import Enum
 from pyspark.sql.dataframe import DataFrame
-from pyspark.sql.functions import log2, udf
+from pyspark.sql.functions import log2, col
+from pyspark.sql.types import  IntegerType
 from sklearn.metrics import accuracy_score
 import queue
 
@@ -16,12 +17,6 @@ class TreeNodeType(Enum):
 class FeatureType(Enum):
     CONTINOUS = 1
     DISCRETE = 2
-
-class Indexer():
-    def __init__(self,
-                 featureValuse:list):
-        pass
-        
 
 class DecisionTreeNode():
     def __init__(self, 
@@ -48,7 +43,7 @@ class DecisionTree():
     DEBUG = False
     def __init__(self,
                  maxDepth: Optional[int] = 5,
-                 maxBins: Optional[int] = 10,
+                 maxBins: Optional[int] = 5,
                  numclasses:Optional[int] = None,
                  featureCols: Optional[list[str]] = None,
                  featureTypes: dict[str, FeatureType] = None,
@@ -74,7 +69,25 @@ class DecisionTree():
             self.labelCol = self.data.columns[-1]
         for featureName, featureType in self.featureTypes.items():
             if(featureType == FeatureType.CONTINOUS):
-                pass
+                rdd = self.data.select(col(featureName)).rdd
+                def find_min_max(iterator):
+                    min_val = float('inf')
+                    max_val = float('-inf')
+                    for row in iterator:
+                        val = row[0]
+                        if val < min_val:
+                            min_val = val
+                        if val > max_val:
+                            max_val = val
+                    yield (min_val, max_val)
+
+                min_max_rdd = rdd.mapPartitions(find_min_max)
+                def reduce_min_max(a, b):
+                    return (min(a[0], b[0]), max(a[1], b[1]))
+                (min_val, max_val) = min_max_rdd.reduce(reduce_min_max)
+                self.data = self.data.withColumn(featureName, ((col(featureName) - min_val) / (max_val - min_val) * (self.maxBins - 1)).cast('int'))
+                self.bins[featureName] = (min_val, max_val, self.maxBins)
+                self.splits_map[featureName] = range(self.maxBins)
             else:
                 featureValues = self.data.select(featureName).distinct().collect()
                 self.splits_map[featureName] = [row[featureName] for row in featureValues]
@@ -109,9 +122,9 @@ class DecisionTree():
             node.updateSplitFeature(max_info_gain_feature)
             for split in splits:
                 if node.condition != "":
-                    new_condition = node.condition + " AND " + max_info_gain_feature + " == " + split
+                    new_condition = node.condition + " AND " + str(max_info_gain_feature) + " == " + str(split)
                 else:
-                    new_condition = max_info_gain_feature + "==" + split
+                    new_condition = str(max_info_gain_feature) + "==" + str(split)
                 new_excluded_features = node.excluded_features + [max_info_gain_feature]
                 new_node = DecisionTreeNode(node_type=TreeNodeType.INTERNAL, condition = new_condition, excluded_features=new_excluded_features)
                 node_queue.put(new_node)
@@ -121,8 +134,9 @@ class DecisionTree():
                     node:DecisionTreeNode,
                     node_data:DataFrame):
         grouped_df = node_data.groupBy(self.labelCol).count()
-        prediction_class = grouped_df.orderBy("count", ascending=False).limit(1).collect()[0][self.labelCol]
-        node.change2Leaf(prediction_class)
+        prediction_class = grouped_df.orderBy("count", ascending=False).limit(1).collect()
+        if len(prediction_class):
+            node.change2Leaf(prediction_class[0][self.labelCol])
 
     def info_gain(self, 
                   data:DataFrame, 
@@ -176,8 +190,12 @@ class DecisionTree():
                 test_data:DataFrame,
                 metrics:Optional[str]="accuracy"):
         predictions = []
-        selected_columns = [col for col in test_data.columns if col != self.labelCol]
-        features = test_data.select(selected_columns).collect()
+        for featureName, featureType in self.featureTypes.items():
+            if featureType == FeatureType.CONTINOUS:
+                (min_val, max_val, numBins) = self.bins[featureName]
+                test_data = test_data.withColumn(featureName, ((col(featureName) - min_val) / (max_val - min_val) * (numBins - 1)).cast('int'))
+        featureCols = [col for col in test_data.columns if col != self.labelCol]
+        features = test_data.select(featureCols).collect()
         for row in features:
             prediction = self.predict(row)
             predictions.append(prediction)
@@ -204,7 +222,7 @@ class DecisionTree():
 class DFDecisionTreeModel():
     def __init__(self,
                  maxDepth: Optional[int] = 5,
-                 maxBins: Optional[int] = 10,
+                 maxBins: Optional[int] = 5,
                  numclasses:Optional[int] = None,
                  featureCols: Optional[list[str]] = None,
                  featureTypes: dict[str, FeatureType] = None,

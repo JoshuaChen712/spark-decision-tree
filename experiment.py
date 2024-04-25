@@ -10,10 +10,10 @@ spark = SparkSession \
     .config("spark.some.config.option", "some-value") \
     .getOrCreate()
 
-df = spark.read.csv("test_dataset.csv", header=True).repartition(partition_num)
+df = spark.read.csv("test_dataset_2.csv", header=True, inferSchema=True).repartition(partition_num)
 (train_data, test_data) = df.randomSplit([0.7, 0.3], seed=42)
-featureTypes = {"feature1": FeatureType.DISCRETE, "feature2": FeatureType.DISCRETE, "feature3": FeatureType.DISCRETE}
-model = DFDecisionTreeModel(featureTypes = featureTypes, treeType="CART")
+featureTypes = {"feature1": FeatureType.CONTINOUS, "feature2": FeatureType.DISCRETE, "feature3": FeatureType.DISCRETE}
+model = DFDecisionTreeModel(featureTypes = featureTypes, treeType="C4.5", maxBins =5)
 
 start_time = time.time()
 model.train(train_data)

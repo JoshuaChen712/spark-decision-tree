@@ -12,7 +12,7 @@ def generate_dataset(num_samples=1000):
 
     target = np.where((feature1_0 + feature2_0 + feature3_0) > 0, 1, 0)
 
-    dataset = pd.DataFrame({'feature1': feature1, 'feature2': feature2, 'feature3': feature3, 'target': target})
+    dataset = pd.DataFrame({'feature1': feature1_0, 'feature2': feature2, 'feature3': feature3, 'target': target})
 
     return dataset
 
@@ -21,7 +21,7 @@ def save_dataset(dataset, filename):
 
 if __name__ == "__main__":
     num_samples = 1000
-    filename = "test_dataset.csv"
+    filename = "test_dataset_2.csv"
 
     dataset = generate_dataset(num_samples)
     save_dataset(dataset, filename)
