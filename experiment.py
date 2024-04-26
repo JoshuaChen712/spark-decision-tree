@@ -11,11 +11,12 @@ spark = SparkSession \
     .getOrCreate()
 
 # Load dataset
-df = spark.read.csv("test_dataset_2.csv", header=True,
-                    inferSchema=True).repartition(partition_num)
+df = spark.read.csv("test_dataset_3.csv", header=True,
+                    inferSchema=True)
 
 # Split dataset into train data and test data
 (train_data, test_data) = df.randomSplit([0.7, 0.3], seed=42)
+train_data.repartition(partition_num)
 
 # Explicitly declare the feature type (Could be be optimized for self-inference)
 featureTypes = {"feature1": FeatureType.CONTINOUS,
