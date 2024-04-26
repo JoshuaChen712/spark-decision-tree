@@ -8,7 +8,7 @@ conf = SparkConf().setAppName("DecisionTreeExample")
 sc = SparkContext(conf=conf)
 spark = SparkSession(sc)
 
-data = spark.read.format("csv").option("header", "true").option("inferSchema", "true").load("test_dataset_2.csv")
+data = spark.read.format("csv").option("header", "true").option("inferSchema", "true").load("test_dataset_3.csv")
 
 assembler = VectorAssembler(inputCols=data.columns[:-1], outputCol="features")
 data = assembler.transform(data)

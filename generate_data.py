@@ -20,8 +20,8 @@ def save_dataset(dataset, filename):
     dataset.to_csv(filename, index=False)
 
 if __name__ == "__main__":
-    num_samples = 1000
-    filename = "test_dataset_2.csv"
+    num_samples = 100000
+    filename = "test_dataset_3.csv"
 
     dataset = generate_dataset(num_samples)
     save_dataset(dataset, filename)

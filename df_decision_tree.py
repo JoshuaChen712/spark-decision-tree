@@ -40,7 +40,7 @@ class DecisionTreeNode():
 
 
 class DecisionTree():
-    DEBUG = False
+    DEBUG = True
     def __init__(self,
                  maxDepth: Optional[int] = 5,
                  maxBins: Optional[int] = 5,
@@ -139,6 +139,8 @@ class DecisionTree():
         prediction_class = grouped_df.orderBy("count", ascending=False).limit(1).collect()
         if len(prediction_class):
             node.change2Leaf(prediction_class[0][self.labelCol])
+        else:
+            node.change2Leaf(self.data.first()[self.labelCol])
 
     ## calculation for information gain. Different type tree using different methods
     def info_gain(self, 
@@ -217,6 +219,7 @@ class DecisionTree():
                 print("node_type", node.node_type)
                 print("condition", node.condition)
                 print("split_feature", node.split_feature)
+                print("excluded_feature", node.excluded_features)
                 print("="*10)
                 for key, child in node.children.items():
                     q.put(child)
