@@ -40,7 +40,7 @@ class DecisionTreeNode():
 
 
 class DecisionTree():
-    DEBUG = True
+    DEBUG = False
     def __init__(self,
                  maxDepth: Optional[int] = 5,
                  maxBins: Optional[int] = 5,
