@@ -8,7 +8,8 @@ conf = SparkConf().setAppName("DecisionTreeExample")
 sc = SparkContext(conf=conf)
 spark = SparkSession(sc)
 
-data = spark.read.format("csv").option("header", "true").option("inferSchema", "true").load("test_dataset_3.csv")
+data = spark.read.format("csv").option("header", "true").option(
+    "inferSchema", "true").load("test_dataset_2.csv")
 
 assembler = VectorAssembler(inputCols=data.columns[:-1], outputCol="features")
 data = assembler.transform(data)
@@ -21,7 +22,8 @@ dt = DecisionTreeClassifier(labelCol="target", featuresCol="features")
 model = dt.fit(trainingData)
 predictions = model.transform(testData)
 
-evaluator = MulticlassClassificationEvaluator(labelCol="target", predictionCol="prediction", metricName="accuracy")
+evaluator = MulticlassClassificationEvaluator(
+    labelCol="target", predictionCol="prediction", metricName="accuracy")
 accuracy = evaluator.evaluate(predictions)
 print(accuracy)
 
