@@ -40,7 +40,7 @@ class DecisionTreeNode():
 
 
 class DecisionTree():
-    DEBUG = False
+    DEBUG = True
     def __init__(self,
                  maxDepth: Optional[int] = 5,
                  maxBins: Optional[int] = 5,
@@ -59,6 +59,7 @@ class DecisionTree():
         self.bins = {}
         self.splits_map = {}
 
+    ## binning and pre-split for all the features.
     def preprocessing(self, 
                       data:DataFrame):
         self.data = data
@@ -92,7 +93,7 @@ class DecisionTree():
                 featureValues = self.data.select(featureName).distinct().collect()
                 self.splits_map[featureName] = [row[featureName] for row in featureValues]
 
-
+    ## Use BFS to build the decision tree. 
     def build_tree(self):
         node_queue = queue.Queue()
         self.root = DecisionTreeNode(node_type = TreeNodeType.ROOT)
@@ -130,6 +131,7 @@ class DecisionTree():
                 node_queue.put(new_node)
                 node.children[split] = new_node
     
+    ## Mark the node as leaf, and using the majority of the node as the prediction class
     def change2Leaf(self, 
                     node:DecisionTreeNode,
                     node_data:DataFrame):
@@ -138,6 +140,7 @@ class DecisionTree():
         if len(prediction_class):
             node.change2Leaf(prediction_class[0][self.labelCol])
 
+    ## calculation for information gain. Different type tree using different methods
     def info_gain(self, 
                   data:DataFrame, 
                   featureName:str):
