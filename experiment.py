@@ -10,19 +10,22 @@ spark = SparkSession \
     .config("spark.some.config.option", "some-value") \
     .getOrCreate()
 
-## Load dataset
-df = spark.read.csv("test_dataset_2.csv", header=True, inferSchema=True).repartition(partition_num)
+# Load dataset
+df = spark.read.csv("test_dataset_2.csv", header=True,
+                    inferSchema=True).repartition(partition_num)
 
-## Split dataset into train data and test data
+# Split dataset into train data and test data
 (train_data, test_data) = df.randomSplit([0.7, 0.3], seed=42)
 
-## Explicitly declare the feature type (Could be be optimized for self-inference)
-featureTypes = {"feature1": FeatureType.CONTINOUS, "feature2": FeatureType.DISCRETE, "feature3": FeatureType.DISCRETE}
+# Explicitly declare the feature type (Could be be optimized for self-inference)
+featureTypes = {"feature1": FeatureType.CONTINOUS,
+                "feature2": FeatureType.DISCRETE, "feature3": FeatureType.DISCRETE}
 
-## Define the dicision tree model.
-model = DFDecisionTreeModel(featureTypes = featureTypes, treeType="C4.5", maxBins =5)
+# Define the dicision tree model.
+model = DFDecisionTreeModel(
+    featureTypes=featureTypes, treeType="C4.5", maxBins=5)
 
-## Calculate time for training (building the decision tree)
+# Calculate time for training (building the decision tree)
 start_time = time.time()
 model.train(train_data)
 end_time = time.time()
@@ -30,5 +33,5 @@ end_time = time.time()
 duration = end_time - start_time
 print("Execution Time{:.2f}s".format(duration))
 
-## Evaluate the performance
+# Evaluate the performance
 model.test(test_data)
