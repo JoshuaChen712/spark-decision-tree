@@ -44,6 +44,7 @@ class DecisionTreeNode():
 
 class DecisionTree():
     DEBUG = True
+
     def __init__(self,
                  maxDepth: Optional[int] = 5,
                  maxBins: Optional[int] = 5,
@@ -224,8 +225,12 @@ class DecisionTree():
             prediction = self.predict(row)
             predictions.append(prediction)
         labels = test_data.select(self.labelCol).collect()
+
         if (metrics == "accuracy"):
             score = accuracy_score(labels, predictions)
+        else:
+            raise NotImplementedError
+
         return predictions, score
 
     def print_decision_tree(self):
