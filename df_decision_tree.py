@@ -75,23 +75,8 @@ class DecisionTree():
         for featureName, featureType in self.featureTypes.items():
             if (featureType == FeatureType.CONTINOUS):
                 rdd = self.data.select(col(featureName)).rdd
-
-                def find_min_max(iterator):
-                    min_val = float('inf')
-                    max_val = float('-inf')
-                    for row in iterator:
-                        val = row[0]
-                        if val < min_val:
-                            min_val = val
-                        if val > max_val:
-                            max_val = val
-                    yield (min_val, max_val)
-
-                min_max_rdd = rdd.mapPartitions(find_min_max)
-
-                def reduce_min_max(a, b):
-                    return (min(a[0], b[0]), max(a[1], b[1]))
-                (min_val, max_val) = min_max_rdd.reduce(reduce_min_max)
+                min_val = rdd.min()[0]
+                max_val = rdd.max()[0]
                 self.data = self.data.withColumn(featureName, ((col(
                     featureName) - min_val) / (max_val - min_val) * (self.maxBins - 1)).cast('int'))
                 self.bins[featureName] = (min_val, max_val, self.maxBins)
